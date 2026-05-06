@@ -124,25 +124,44 @@ function draw() {
 /* ======= ΔΙΑΓΡΑΜΜΑ ======= */
 function plotSignal(label, f, scale, yOffset, plotWidth, col) {
   const h = height / 3;
-  push();
-  translate(0, yOffset + h/2);
 
+  push();
+  translate(0, yOffset + h / 2);
+
+  // οριζόντιος άξονας (y=0)
   stroke(180);
   line(marginLeft, 0, plotWidth, 0);
 
+  // ---- ΝΕΟ: διακεκομμένη οριζόντια γραμμή αρχικής τιμής ----
+  if (samples.length > 0) {
+    const yInit = map(
+      f(samples[0]),
+      -scale, scale,
+      h / 2, -h / 2
+    );
+
+    stroke(150);
+    drawingContext.setLineDash([6, 6]);
+    line(marginLeft, yInit, plotWidth, yInit);
+    drawingContext.setLineDash([]);
+  }
+
+  // καμπύλη
   stroke(col);
   noFill();
   beginShape();
   for (const s of samples) {
     const x = map(s.t, 0, totalTime, marginLeft, plotWidth);
-    const y = map(f(s), -scale, scale, h/2, -h/2);
+    const y = map(f(s), -scale, scale, h / 2, -h / 2);
     vertex(x, y);
   }
   endShape();
 
+  // ετικέτα
   noStroke();
   fill(0);
-  text(label, marginLeft + 5, -h/2 + 15);
+  text(label, marginLeft + 5, -h / 2 + 15);
+
   pop();
 }
 
