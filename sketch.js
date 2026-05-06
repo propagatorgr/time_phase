@@ -128,14 +128,15 @@ function plotSignal(label, f, scale, yOffset, plotWidth, col) {
   push();
   translate(0, yOffset + h / 2);
 
-  // οριζόντιος άξονας (y=0)
+  // οριζόντιος άξονας (y = 0)
   stroke(180);
   line(marginLeft, 0, plotWidth, 0);
 
   // διακεκομμένη οριζόντια γραμμή αρχικής τιμής
   if (samples.length > 0) {
+    const initialValue = f(samples[0]);
     const yInit = map(
-      f(samples[0]),
+      initialValue,
       -scale, scale,
       h / 2, -h / 2
     );
@@ -145,18 +146,21 @@ function plotSignal(label, f, scale, yOffset, plotWidth, col) {
     line(marginLeft, yInit, plotWidth, yInit);
     drawingContext.setLineDash([]);
 
-    // ✅ ΝΕΟ: εμφάνιση x0 μόνο στο διάγραμμα x(t)
-    if (label === "x(t)") {
-      const x0 = f(samples[0]);
+    // ✅ ΕΝΔΕΙΞΕΙΣ ΑΡΧΙΚΩΝ ΤΙΜΩΝ
+    noStroke();
+    fill(0);
+    textSize(12);
 
-      noStroke();
-      fill(0);
-      textSize(12);
-      text(
-        `x₀ = ${x0.toFixed(1)}`,
-        marginLeft - 55,
-        yInit + 4
-      );
+    if (label === "x(t)") {
+      text(`x₀ = ${initialValue.toFixed(1)}`, marginLeft - 60, yInit + 4);
+    }
+
+    if (label === "u(t)") {
+      text(`u₀ = ${initialValue.toFixed(1)}`, marginLeft - 60, yInit + 4);
+    }
+
+    if (label === "a(t)") {
+      text(`a₀ = ${initialValue.toFixed(1)}`, marginLeft - 60, yInit + 4);
     }
   }
 
@@ -178,6 +182,7 @@ function plotSignal(label, f, scale, yOffset, plotWidth, col) {
 
   pop();
 }
+
 
 /* ======= ΠΛΕΓΜΑ T/4 ======= */
 function drawVerticalGrid(plotWidth) {
