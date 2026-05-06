@@ -1,36 +1,38 @@
-// ========= ΣΤΑΘΕΡΕΣ =========
-const T0 = 2;
+// ================== ΦΥΣΙΚΕΣ ΣΤΑΘΕΡΕΣ ==================
+const T0 = 2;                 // φυσική περίοδος
 const dt = 0.01;
+const omega = TWO_PI / T0;
 
-// ========= ΚΑΤΑΣΤΑΣΗ =========
+// ================== ΚΑΤΑΣΤΑΣΗ ==================
 let ASelect, periodsSelect, phiSelect;
 let pauseBtn, resetBtn;
 
 let samples = [];
+let theta = 0;                // ✅ ΦΑΣΗ (κύρια μεταβλητή)
 let t = 0;
 let paused = false;
 let totalTime = T0;
+let totalTheta = TWO_PI;
 
 let phaseFrozen = false;
 let frozenPQ = null;
 
 let marginLeft;
 
-// ========= SETUP =========
+// ================== SETUP ==================
 function setup() {
   let canvas = createCanvas(windowWidth * 0.9, windowHeight * 0.9);
   canvas.parent("canvas-holder");
 
   marginLeft = width * 0.07;
 
-  // Controls → sidebar
   createP("Πλάτος A").parent("controls");
   ASelect = createSelect().parent("controls");
   [50, 100, 150].forEach(v => ASelect.option(v));
 
   createP("Αριθμός περιόδων").parent("controls");
   periodsSelect = createSelect().parent("controls");
-  [1, 2, 3, 4, 5, 6].forEach(v => periodsSelect.option(v));
+  [1,2,3,4,5,6].forEach(v => periodsSelect.option(v));
 
   createP("Αρχική φάση φ").parent("controls");
   phiSelect = createSelect().parent("controls");
@@ -38,7 +40,7 @@ function setup() {
     ["0",0],["π/6",PI/6],["π/4",PI/4],["π/3",PI/3],
     ["π/2",PI/2],["2π/3",2*PI/3],["5π/6",5*PI/6],
     ["π",PI],["3π/2",3*PI/2],["2π",2*PI]
-  ].forEach(p => phiSelect.option(p[0], p[1]));
+  ].forEach(p => phiSelect.option(p[0],p[1]));
 
   pauseBtn = createButton("Pause").parent("controls");
   pauseBtn.mousePressed(togglePause);
@@ -54,47 +56,52 @@ function windowResized() {
   marginLeft = width * 0.07;
 }
 
-// ========= RESET =========
+// ================== RESET ==================
 function resetSketch() {
   samples = [];
   t = 0;
+  theta = Number(phiSelect.value());
   paused = false;
   phaseFrozen = false;
   frozenPQ = null;
+
   pauseBtn.html("Pause");
-  totalTime = Number(periodsSelect.value()) * T0;
+
+  let N = Number(periodsSelect.value());
+  totalTime  = N * T0;
+  totalTheta = N * TWO_PI;
 }
 
-// ========= DRAW =========
+// ================== DRAW ==================
 function draw() {
   background(255);
 
   let A = Number(ASelect.value());
-  let phi0 = Number(phiSelect.value());
-  let omega = TWO_PI / T0;
-
-  if (!paused && t <= totalTime) {
-    samples.push({
-      t,
-      x: A * sin(omega * t + phi0),
-      u: omega * A * cos(omega * t + phi0),
-      a: -omega * omega * A * sin(omega * t + phi0)
-    });
-    t += dt;
-  }
-
   let plotWidth = width * 0.65;
 
-  drawVerticalGrid(plotWidth);
-  drawTimeLabels(plotWidth);   // ✅ ΕΔΩ Η ΔΙΟΡΘΩΣΗ
+  // ✅ ΕΞΕΛΙΞΗ ΜΕ ΑΚΡΙΒΗ ΓΩΝΙΑ
+  if (!paused && theta <= totalTheta) {
+    samples.push({
+      t,
+      x: A * sin(theta),
+      u: omega * A * cos(theta),
+      a: -omega*omega*A * sin(theta)
+    });
 
-  drawPlots(A, omega, plotWidth);
+    theta += omega * dt;
+    t = theta / omega;
+  }
+
+  drawVerticalGrid(plotWidth);
+  drawTimeLabels(plotWidth);
+
+  drawPlots(A, plotWidth);
   drawCursor(plotWidth);
-  drawPhaseCircle(plotWidth, omega, phi0);
+  drawPhaseCircle(plotWidth);
 }
 
-// ========= ΔΙΑΓΡΑΜΜΑΤΑ =========
-function drawPlots(A, omega, plotWidth) {
+// ================== ΔΙΑΓΡΑΜΜΑΤΑ ==================
+function drawPlots(A, plotWidth) {
   plotSignal("x(t)", p=>p.x, A, 0, plotWidth, "blue");
   plotSignal("u(t)", p=>p.u, omega*A, height/3, plotWidth, "green");
   plotSignal("a(t)", p=>p.a, omega*omega*A, 2*height/3, plotWidth, "red");
@@ -124,7 +131,7 @@ function plotSignal(label, accessor, scale, yOffset, plotWidth, col) {
   pop();
 }
 
-// ========= ΚΑΤΑΚΟΡΥΦΟ ΠΛΕΓΜΑ =========
+// ================== ΠΛΕΓΜΑ & ΧΡΟΝΟΣ ==================
 function drawVerticalGrid(plotWidth) {
   stroke(180);
   drawingContext.setLineDash([6,6]);
@@ -135,7 +142,6 @@ function drawVerticalGrid(plotWidth) {
   drawingContext.setLineDash([]);
 }
 
-// ========= ✅ ΕΤΙΚΕΤΕΣ ΧΡΟΝΟΥ =========
 function drawTimeLabels(plotWidth) {
   fill(0);
   noStroke();
@@ -156,20 +162,20 @@ function drawTimeLabels(plotWidth) {
   }
 }
 
-// ========= CURSOR =========
+// ================== CURSOR ==================
 function drawCursor(plotWidth) {
   stroke("red");
   let x = map(t, 0, totalTime, marginLeft, plotWidth);
   line(x, 0, x, height);
 }
 
-// ========= ΚΥΚΛΟΣ ΦΑΣΗΣ =========
-function drawPhaseCircle(plotWidth, omega, phi0) {
+// ================== ΚΥΚΛΟΣ ΦΑΣΗΣ ==================
+function drawPhaseCircle(plotWidth) {
   let cx = plotWidth + (width-plotWidth)/2;
   let cy = height/2;
   let R = min(width-plotWidth, height)*0.28;
 
-  let theta = omega*t + phi0;
+  let thetaEff = min(theta, totalTheta);
 
   push();
   translate(cx,cy);
@@ -180,51 +186,16 @@ function drawPhaseCircle(plotWidth, omega, phi0) {
   line(0,-R,0,R);
 
   stroke("red");
-  line(0,0,R*cos(theta),-R*sin(theta));
+  line(0,0,R*cos(thetaEff),-R*sin(thetaEff));
   fill("red");
-  circle(R*cos(theta),-R*sin(theta),R*0.08);
+  circle(R*cos(thetaEff),-R*sin(thetaEff),R*0.08);
 
-  if (phaseFrozen && frozenPQ) {
-    let {p,q} = frozenPQ;
-    fill("red");
-    noStroke();
-    text(`φ = ${p}π/${q}`, -R, -R*1.2);
-    text(`t = ${p}T/${2*q}`, -R, -R);
-  }
   pop();
 }
 
-// ========= ΚΛΙΚ =========
-function mousePressed() {
-  if (!paused) return;
-
-  let omega = TWO_PI/T0;
-  let phi0 = Number(phiSelect.value());
-  let theta = omega*t + phi0;
-  frozenPQ = phaseToFraction(theta);
-  phaseFrozen = true;
-}
-
+// ================== PAUSE ==================
 function togglePause() {
   paused = !paused;
   phaseFrozen = false;
-  pauseBtn.html(paused?"Resume":"Pause");
+  pauseBtn.html(paused ? "Resume" : "Pause");
 }
-
-// ========= ΦΑΣΗ → pπ/q =========
-function phaseToFraction(theta) {
-  let x = theta/PI;
-  let best = {p:0,q:1,e:1};
-
-  for (let q=1; q<=24; q++) {
-    let p = Math.round(x*q);
-    let e = Math.abs(x - p/q);
-    if (e < best.e) best = {p,q,e};
-  }
-
-  let g = gcd(Math.abs(best.p), best.q);
-  return {p:best.p/g, q:best.q/g};
-}
-
-function gcd(a,b){ return b ? gcd(b, a%b) : a; }
-
