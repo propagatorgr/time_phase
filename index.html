@@ -4,63 +4,33 @@
   <meta charset="utf-8">
   <title>Απλή Αρμονική Ταλάντωση</title>
 
+  <!-- p5.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/addons/p5.dom.min.js"></script>
 
-  <style>
-    * { box-sizing: border-box; }
-
-   
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  min-height: 100vh;   /* μπορεί να μεγαλώσει */
-  overflow-y: auto;   /* επιτρέπει scroll */
-}
-
-
-   
-#app {
-  display: flex;
-  min-height: 100%;
-  width: 100%;
-}
-
-
-    #controls {
-      width: 280px;
-      min-width: 280px;
-      padding: 12px;
-      background: #f4f4f4;
-      border-right: 1px solid #ccc;
-      overflow-y: auto;
-    }
-
-    #canvas-holder {
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    select, button {
-      width: 100%;
-      margin-bottom: 10px;
-      padding: 6px;
-      font-size: 14px;
-    }
-
-    h3 { margin-top: 0; }
-  </style>
+  <!-- ΣΤΥΛ ΜΟΝΟ ΑΠΟ style.css -->
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
   <div id="app">
+
+    <!-- ΠΛΑΪΝΗ ΣΤΗΛΗ ΡΥΘΜΙΣΕΩΝ -->
     <div id="controls">
       <h3>Ρυθμίσεις</h3>
+      <!-- Τα p5 controls (createP, createSelect, κ.λπ.)
+           μπαίνουν εδώ μέσω parent("controls") -->
     </div>
-    <div id="canvas-holder"></div>
+
+    <!-- ΠΕΡΙΟΧΗ CANVAS -->
+    <div id="canvas-holder">
+      <!-- Το canvas τοποθετείται εδώ -->
+    </div>
+
   </div>
 
+  <!-- ΤΟ SKETCH -->
   <script src="sketch.js"></script>
 </body>
 </html>
-
+``
