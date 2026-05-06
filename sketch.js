@@ -1,26 +1,30 @@
 /****************************************************
- * Απλή Αρμονική Ταλάντωση – Πλήρης Έκδοση
- * Ακριβής φάση (χωρίς αριθμητικό σφάλμα)
+ * Απλή Αρμονική Ταλάντωση – Τελική Έκδοση
+ * Ακριβής φάση + ενδείξεις φ και t στο Pause
  ****************************************************/
 
 /* ======= ΣΤΑΘΕΡΕΣ (ΚΑΘΑΡΗ JS) ======= */
-const T0 = 2;                  // φυσική περίοδος
-const DT = 0.01;               // χρονικό βήμα
-const TWO_PI_JS = 2 * Math.PI; // ΟΧΙ p5.TWO_PI
+const T0 = 2;
+const DT = 0.01;
+const TWO_PI_JS = 2 * Math.PI;
 
 /* ======= ΚΑΤΑΣΤΑΣΗ ======= */
 let ASelect, periodsSelect, phiSelect;
 let pauseBtn, resetBtn;
 
-let samples = [];              // αποθήκευση σημείων
-let theta = 0;                 // ΦΑΣΗ (rad) – ΠΡΩΤΟΓΕΝΗΣ
-let t = 0;                     // χρόνος
+let samples = [];
+let theta = 0;      // φάση (rad) – πρωτογενής
+let t = 0;
 let paused = false;
 
-let totalTheta = TWO_PI_JS;    // συνολική φάση
-let totalTime = T0;            // συνολικός χρόνος
+let totalTheta = TWO_PI_JS;
+let totalTime = T0;
 
 let marginLeft = 0;
+
+// για ενδείξεις στο Pause
+let showValues = false;
+let frozenPQ = null;   // {p, q}
 
 /* ======= SETUP ======= */
 function setup() {
@@ -29,7 +33,6 @@ function setup() {
 
   marginLeft = width * 0.07;
 
-  /* -------- Controls -------- */
   createP("Πλάτος A").parent("controls");
   ASelect = createSelect().parent("controls");
   [50, 100, 150].forEach(v => ASelect.option(v));
@@ -71,10 +74,11 @@ function windowResized() {
 /* ======= RESET ======= */
 function resetSketch() {
   samples = [];
-
   theta = Number(phiSelect.value());
   t = 0;
   paused = false;
+  showValues = false;
+  frozenPQ = null;
   pauseBtn.html("Pause");
 
   const N = Number(periodsSelect.value());
@@ -90,7 +94,6 @@ function draw() {
   const omega = TWO_PI_JS / T0;
   const plotWidth = width * 0.65;
 
-  /* ---- ΑΚΡΙΒΗΣ ΕΞΕΛΙΞΗ ΦΑΣΗΣ ---- */
   if (!paused && theta <= totalTheta + 1e-9) {
     samples.push({
       t: t,
@@ -107,19 +110,18 @@ function draw() {
   drawTimeLabels(plotWidth);
 
   plotSignal("x(t)", s => s.x, A,                 0,            plotWidth, "blue");
-  plotSignal("u(t)", s => s.u, omega * A,         height / 3,   plotWidth, "green");
-  plotSignal("a(t)", s => s.a, omega * omega * A, 2 * height/3, plotWidth, "red");
+  plotSignal("u(t)", s => s.u, omega * A,         height/3,     plotWidth, "green");
+  plotSignal("a(t)", s => s.a, omega*omega*A,     2*height/3,   plotWidth, "red");
 
   drawTimeCursor(plotWidth);
   drawPhaseCircle(plotWidth);
 }
 
-/* ======= ΔΙΑΓΡΑΜΜΑΤΑ ======= */
+/* ======= ΔΙΑΓΡΑΜΜΑ ======= */
 function plotSignal(label, f, scale, yOffset, plotWidth, col) {
   const h = height / 3;
-
   push();
-  translate(0, yOffset + h / 2);
+  translate(0, yOffset + h/2);
 
   stroke(180);
   line(marginLeft, 0, plotWidth, 0);
@@ -140,12 +142,11 @@ function plotSignal(label, f, scale, yOffset, plotWidth, col) {
   pop();
 }
 
-/* ======= ΠΛΕΓΜΑ T/4 ======= */
+/* ======= ΠΛΕΓΜΑ ======= */
 function drawVerticalGrid(plotWidth) {
   stroke(180);
-  drawingContext.setLineDash([6, 6]);
-
-  for (let tt = 0; tt <= totalTime + 1e-9; tt += T0 / 4) {
+  drawingContext.setLineDash([6,6]);
+  for (let tt = 0; tt <= totalTime + 1e-9; tt += T0/4) {
     const x = map(tt, 0, totalTime, marginLeft, plotWidth);
     line(x, 0, x, height);
   }
@@ -157,21 +158,15 @@ function drawTimeLabels(plotWidth) {
   fill(0);
   noStroke();
   textSize(12);
-
-  for (let tt = 0; tt <= totalTime + 1e-9; tt += T0 / 4) {
+  for (let tt = 0; tt <= totalTime + 1e-9; tt += T0/4) {
     const x = map(tt, 0, totalTime, marginLeft, plotWidth);
-    const k = tt / (T0 / 4);
-
-    let label;
-    if (k === 0) label = "0";
-    else if (k % 4 === 0) label = (k/4) + "T";
-    else label = k + "T/4";
-
+    const k = tt / (T0/4);
+    let label = (k === 0) ? "0" : (k % 4 === 0 ? (k/4)+"T" : k+"T/4");
     text(label, x - 10, height - 8);
   }
 }
 
-/* ======= ΚΟΚΚΙΝΟΣ ΔΕΙΚΤΗΣ ΧΡΟΝΟΥ ======= */
+/* ======= ΧΡΟΝΙΚΟΣ ΔΕΙΚΤΗΣ ======= */
 function drawTimeCursor(plotWidth) {
   stroke("red");
   const x = map(t, 0, totalTime, marginLeft, plotWidth);
@@ -184,22 +179,29 @@ function drawPhaseCircle(plotWidth) {
   const cy = height / 2;
   const R  = Math.min(width - plotWidth, height) * 0.28;
 
-  const thetaEff = Math.min(theta, totalTheta);
+  const th = Math.min(theta, totalTheta);
 
   push();
   translate(cx, cy);
 
   stroke(0);
   noFill();
-  circle(0, 0, 2 * R);
-  line(-R, 0, R, 0);
-  line(0, -R, 0, R);
+  circle(0,0,2*R);
+  line(-R,0,R,0);
+  line(0,-R,0,R);
 
   stroke("red");
-  line(0, 0, R * Math.cos(thetaEff), -R * Math.sin(thetaEff));
+  line(0,0,R*Math.cos(th),-R*Math.sin(th));
   fill("red");
-  circle(R * Math.cos(thetaEff), -R * Math.sin(thetaEff), R * 0.08);
+  circle(R*Math.cos(th),-R*Math.sin(th),R*0.08);
 
+  if (showValues && frozenPQ) {
+    noStroke();
+    fill("red");
+    textSize(14);
+    text(`φ = ${frozenPQ.p}π/${frozenPQ.q}`, -R, -R - 20);
+    text(`t = ${frozenPQ.p}T/${2*frozenPQ.q}`, -R, -R);
+  }
   pop();
 }
 
@@ -207,4 +209,28 @@ function drawPhaseCircle(plotWidth) {
 function togglePause() {
   paused = !paused;
   pauseBtn.html(paused ? "Resume" : "Pause");
+
+  if (paused) {
+    frozenPQ = phaseToFraction(theta);
+    showValues = true;
+  } else {
+    showValues = false;
+  }
 }
+
+/* ======= ΒΟΗΘΗΤΙΚΟ ======= */
+function phaseToFraction(th) {
+  const x = th / Math.PI;
+  let best = {p:0, q:1, err:1e9};
+
+  for (let q = 1; q <= 24; q++) {
+    const p = Math.round(x * q);
+    const err = Math.abs(x - p/q);
+    if (err < best.err) best = {p, q, err};
+  }
+
+  const g = gcd(Math.abs(best.p), best.q);
+  return {p: best.p/g, q: best.q/g};
+}
+
+function gcd(a,b){ return b ? gcd(b,a%b) : a; }
