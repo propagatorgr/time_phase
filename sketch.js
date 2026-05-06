@@ -132,7 +132,7 @@ function plotSignal(label, f, scale, yOffset, plotWidth, col) {
   stroke(180);
   line(marginLeft, 0, plotWidth, 0);
 
-  // ---- ΝΕΟ: διακεκομμένη οριζόντια γραμμή αρχικής τιμής ----
+  // διακεκομμένη οριζόντια γραμμή αρχικής τιμής
   if (samples.length > 0) {
     const yInit = map(
       f(samples[0]),
@@ -144,6 +144,20 @@ function plotSignal(label, f, scale, yOffset, plotWidth, col) {
     drawingContext.setLineDash([6, 6]);
     line(marginLeft, yInit, plotWidth, yInit);
     drawingContext.setLineDash([]);
+
+    // ✅ ΝΕΟ: εμφάνιση x0 μόνο στο διάγραμμα x(t)
+    if (label === "x(t)") {
+      const x0 = f(samples[0]);
+
+      noStroke();
+      fill(0);
+      textSize(12);
+      text(
+        `x₀ = ${x0.toFixed(1)}`,
+        marginLeft - 55,
+        yInit + 4
+      );
+    }
   }
 
   // καμπύλη
@@ -157,7 +171,7 @@ function plotSignal(label, f, scale, yOffset, plotWidth, col) {
   }
   endShape();
 
-  // ετικέτα
+  // ετικέτα διαγράμματος
   noStroke();
   fill(0);
   text(label, marginLeft + 5, -h / 2 + 15);
