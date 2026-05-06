@@ -85,7 +85,9 @@ function draw() {
 
   let plotWidth = width * 0.65;
 
-  drawGrid(plotWidth);
+  drawVerticalGrid(plotWidth);
+  drawTimeLabels(plotWidth);   // ✅ ΕΔΩ Η ΔΙΟΡΘΩΣΗ
+
   drawPlots(A, omega, plotWidth);
   drawCursor(plotWidth);
   drawPhaseCircle(plotWidth, omega, phi0);
@@ -103,6 +105,7 @@ function plotSignal(label, accessor, scale, yOffset, plotWidth, col) {
   push();
   translate(0, yOffset + h/2);
 
+  stroke(180);
   line(marginLeft, 0, plotWidth, 0);
 
   stroke(col);
@@ -121,22 +124,43 @@ function plotSignal(label, accessor, scale, yOffset, plotWidth, col) {
   pop();
 }
 
-// ========= ΠΛΕΓΜΑ =========
-function drawGrid(plotWidth) {
+// ========= ΚΑΤΑΚΟΡΥΦΟ ΠΛΕΓΜΑ =========
+function drawVerticalGrid(plotWidth) {
   stroke(180);
   drawingContext.setLineDash([6,6]);
-  for (let tt=0; tt<=totalTime; tt+=T0/4) {
-    let x = map(tt,0,totalTime,marginLeft,plotWidth);
-    line(x,0,x,height);
+  for (let tt = 0; tt <= totalTime + 1e-6; tt += T0/4) {
+    let x = map(tt, 0, totalTime, marginLeft, plotWidth);
+    line(x, 0, x, height);
   }
   drawingContext.setLineDash([]);
+}
+
+// ========= ✅ ΕΤΙΚΕΤΕΣ ΧΡΟΝΟΥ =========
+function drawTimeLabels(plotWidth) {
+  fill(0);
+  noStroke();
+  textSize(12);
+
+  let yLabel = height - 8;
+
+  for (let tt = 0; tt <= totalTime + 1e-6; tt += T0/4) {
+    let x = map(tt, 0, totalTime, marginLeft, plotWidth);
+    let k = tt / (T0/4);
+
+    let label;
+    if (k === 0) label = "0";
+    else if (k % 4 === 0) label = (k/4) + "T";
+    else label = k + "T/4";
+
+    text(label, x - 10, yLabel);
+  }
 }
 
 // ========= CURSOR =========
 function drawCursor(plotWidth) {
   stroke("red");
-  let x = map(t,0,totalTime,marginLeft,plotWidth);
-  line(x,0,x,height);
+  let x = map(t, 0, totalTime, marginLeft, plotWidth);
+  line(x, 0, x, height);
 }
 
 // ========= ΚΥΚΛΟΣ ΦΑΣΗΣ =========
@@ -150,8 +174,10 @@ function drawPhaseCircle(plotWidth, omega, phi0) {
   push();
   translate(cx,cy);
   noFill();
+  stroke(0);
   circle(0,0,2*R);
-  line(-R,0,R,0); line(0,-R,0,R);
+  line(-R,0,R,0);
+  line(0,-R,0,R);
 
   stroke("red");
   line(0,0,R*cos(theta),-R*sin(theta));
@@ -160,6 +186,8 @@ function drawPhaseCircle(plotWidth, omega, phi0) {
 
   if (phaseFrozen && frozenPQ) {
     let {p,q} = frozenPQ;
+    fill("red");
+    noStroke();
     text(`φ = ${p}π/${q}`, -R, -R*1.2);
     text(`t = ${p}T/${2*q}`, -R, -R);
   }
@@ -169,6 +197,7 @@ function drawPhaseCircle(plotWidth, omega, phi0) {
 // ========= ΚΛΙΚ =========
 function mousePressed() {
   if (!paused) return;
+
   let omega = TWO_PI/T0;
   let phi0 = Number(phiSelect.value());
   let theta = omega*t + phi0;
@@ -183,14 +212,19 @@ function togglePause() {
 }
 
 // ========= ΦΑΣΗ → pπ/q =========
-function phaseToFraction(theta){
-  let x = theta/PI, best={p:0,q:1,e:1};
-  for(let q=1;q<=24;q++){
-    let p=Math.round(x*q);
-    let e=Math.abs(x-p/q);
-    if(e<best.e) best={p,q,e};
+function phaseToFraction(theta) {
+  let x = theta/PI;
+  let best = {p:0,q:1,e:1};
+
+  for (let q=1; q<=24; q++) {
+    let p = Math.round(x*q);
+    let e = Math.abs(x - p/q);
+    if (e < best.e) best = {p,q,e};
   }
-  let g=gcd(Math.abs(best.p),best.q);
-  return {p:best.p/g,q:best.q/g};
+
+  let g = gcd(Math.abs(best.p), best.q);
+  return {p:best.p/g, q:best.q/g};
 }
-function gcd(a,b){return b?gcd(b,a%b):a;}
+
+function gcd(a,b){ return b ? gcd(b, a%b) : a; }
+
