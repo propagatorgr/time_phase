@@ -1,0 +1,54 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+#app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ΠΛΑΪΝΗ ΣΤΗΛΗ CONTROLS */
+#controls {
+  width: 260px;
+  padding: 20px;
+  background: #f7f7f7;
+  border-right: 1px solid #ddd;
+  box-sizing: border-box;
+}
+
+#controls p {
+  margin: 12px 0 4px;
+  font-weight: bold;
+}
+
+#controls select,
+#controls button {
+  width: 100%;
+  padding: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+/* ΠΕΡΙΟΧΗ CANVAS */
+#canvas-holder {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Responsive για κινητά */
+@media (max-width: 900px) {
+  #app {
+    flex-direction: column;
+  }
+
+  #controls {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+}
