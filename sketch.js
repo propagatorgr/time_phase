@@ -239,8 +239,8 @@ function drawPhaseCircle() {
     const frac = phiToFraction(state.phi);
     noStroke();
     fill("red");
-    text(`φ = ${frac.p}π/${frac.q}`, cx - R, cy - R - 20);
-    text(`t = ${frac.p}T/${2*frac.q}`, cx - R, cy - R);
+    text(`Δφ = ${frac.p}π/${frac.q}`, cx - R, cy - R - 20);
+    text(`Δt = ${frac.p}T/${2*frac.q}`, cx - R, cy - R);
   }
 }
 
