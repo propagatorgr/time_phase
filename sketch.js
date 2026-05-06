@@ -1,30 +1,30 @@
 /****************************************************
- * Απλή Αρμονική Ταλάντωση – Τελική Φυσικά Σωστή Έκδοση
- * Ο κύκλος φάσεων ξεκινά και τελειώνει στο φ0
+ * Απλή Αρμονική Ταλάντωση – Τελική Έκδοση
+ * Επιλογή περιόδου Τ από drop-down
  ****************************************************/
 
-/* ======= ΣΤΑΘΕΡΕΣ (ΚΑΘΑΡΗ JS) ======= */
-const T0 = 2;                  // φυσική περίοδος
-const DT = 0.01;               // χρονικό βήμα
+/* ======= ΣΤΑΘΕΡΕΣ ======= */
+const DT = 0.01;
 const TWO_PI_JS = 2 * Math.PI;
 
 /* ======= ΚΑΤΑΣΤΑΣΗ ======= */
-let ASelect, periodsSelect, phiSelect;
+let ASelect, periodsSelect, phiSelect, TSelect;
 let pauseBtn, resetBtn;
 
 let samples = [];
-let thetaRel = 0;          // σχετική φάση εξέλιξης (ξεκινά από 0)
+let thetaRel = 0;     // σχετική φάση
 let t = 0;
 let paused = false;
 
-let totalThetaRel = TWO_PI_JS; // N*2π
+let T0 = 2;           // ✅ ΠΕΡΙΟΔΟΣ (αλλάζει από menu)
+let totalThetaRel = TWO_PI_JS;
 let totalTime = T0;
 
 let marginLeft = 0;
 
-// ενδείξεις στο Pause
+// Pause ενδείξεις
 let showValues = false;
-let frozenPQ = null;       // {p, q}
+let frozenPQ = null;
 
 /* ======= SETUP ======= */
 function setup() {
@@ -32,6 +32,8 @@ function setup() {
   canvas.parent("canvas-holder");
 
   marginLeft = width * 0.07;
+
+  /* -------- Controls -------- */
 
   createP("Πλάτος A").parent("controls");
   ASelect = createSelect().parent("controls");
@@ -56,6 +58,15 @@ function setup() {
     ["2π", 2*Math.PI]
   ].forEach(p => phiSelect.option(p[0], p[1]));
 
+  /* ✅ ΝΕΟ: Επιλογή περιόδου Τ */
+  createP("Περίοδος Τ").parent("controls");
+  TSelect = createSelect().parent("controls");
+  [
+    ["T = 1 s", 1],
+    ["T = 2 s", 2],
+    ["T = 4 s", 4]
+  ].forEach(p => TSelect.option(p[0], p[1]));
+
   pauseBtn = createButton("Pause").parent("controls");
   pauseBtn.mousePressed(togglePause);
 
@@ -74,16 +85,18 @@ function windowResized() {
 /* ======= RESET ======= */
 function resetSketch() {
   samples = [];
-  thetaRel = 0;        // ✅ ξεκινά ΠΑΝΤΑ από 0
+  thetaRel = 0;
   t = 0;
   paused = false;
   showValues = false;
   frozenPQ = null;
   pauseBtn.html("Pause");
 
+  T0 = Number(TSelect.value());      // ✅ ΠΑΡΑΜΕΤΡΟΣ ΑΠΟ MENU
   const N = Number(periodsSelect.value());
+
+  totalTime = N * T0;
   totalThetaRel = N * TWO_PI_JS;
-  totalTime     = N * T0;
 }
 
 /* ======= DRAW ======= */
@@ -91,13 +104,12 @@ function draw() {
   background(255);
 
   const A = Number(ASelect.value());
-  const phi0 = Number(phiSelect.value()); // ✅ αρχική φάση
-  const omega = TWO_PI_JS / T0;
+  const phi0 = Number(phiSelect.value());
+  const omega = TWO_PI_JS / T0;      // ✅ ΌΛΑ ΑΠΟ Τ0
   const plotWidth = width * 0.65;
 
-  // ακριβής εξέλιξη σχετικής φάσης
   if (!paused && thetaRel <= totalThetaRel + 1e-9) {
-    const phiTotal = phi0 + thetaRel; // ✅ ΟΛΙΚΗ ΦΑΣΗ
+    const phiTotal = phi0 + thetaRel;
 
     samples.push({
       t: t,
@@ -128,63 +140,43 @@ function plotSignal(label, f, scale, yOffset, plotWidth, col) {
   push();
   translate(0, yOffset + h / 2);
 
-  // οριζόντιος άξονας (y = 0)
   stroke(180);
   line(marginLeft, 0, plotWidth, 0);
 
-  // διακεκομμένη οριζόντια γραμμή αρχικής τιμής
   if (samples.length > 0) {
-    const initialValue = f(samples[0]);
-    const yInit = map(
-      initialValue,
-      -scale, scale,
-      h / 2, -h / 2
-    );
+    const initVal = f(samples[0]);
+    const yInit = map(initVal, -scale, scale, h/2, -h/2);
 
     stroke(150);
-    drawingContext.setLineDash([6, 6]);
+    drawingContext.setLineDash([6,6]);
     line(marginLeft, yInit, plotWidth, yInit);
     drawingContext.setLineDash([]);
 
-    // ✅ ΕΝΔΕΙΞΕΙΣ ΑΡΧΙΚΩΝ ΤΙΜΩΝ
     noStroke();
     fill(0);
-    textSize(12);
-
-    if (label === "x(t)") {
-      text(`x₀ = ${initialValue.toFixed(1)}`, marginLeft - 60, yInit + 4);
-    }
-
-    if (label === "u(t)") {
-      text(`u₀ = ${initialValue.toFixed(1)}`, marginLeft - 60, yInit + 4);
-    }
-
-    if (label === "a(t)") {
-      text(`a₀ = ${initialValue.toFixed(1)}`, marginLeft - 60, yInit + 4);
-    }
+    if (label === "x(t)") text(`x₀ = ${initVal.toFixed(1)}`, marginLeft - 60, yInit + 4);
+    if (label === "u(t)") text(`u₀ = ${initVal.toFixed(1)}`, marginLeft - 60, yInit + 4);
+    if (label === "a(t)") text(`a₀ = ${initVal.toFixed(1)}`, marginLeft - 60, yInit + 4);
   }
 
-  // καμπύλη
   stroke(col);
   noFill();
   beginShape();
   for (const s of samples) {
     const x = map(s.t, 0, totalTime, marginLeft, plotWidth);
-    const y = map(f(s), -scale, scale, h / 2, -h / 2);
+    const y = map(f(s), -scale, scale, h/2, -h/2);
     vertex(x, y);
   }
   endShape();
 
-  // ετικέτα διαγράμματος
   noStroke();
   fill(0);
-  text(label, marginLeft + 5, -h / 2 + 15);
+  text(label, marginLeft + 5, -h/2 + 15);
 
   pop();
 }
 
-
-/* ======= ΠΛΕΓΜΑ T/4 ======= */
+/* ======= ΠΛΕΓΜΑ & ΑΞΟΝΑΣ ΧΡΟΝΟΥ ======= */
 function drawVerticalGrid(plotWidth) {
   stroke(180);
   drawingContext.setLineDash([6,6]);
@@ -195,11 +187,9 @@ function drawVerticalGrid(plotWidth) {
   drawingContext.setLineDash([]);
 }
 
-/* ======= ΕΝΔΕΙΞΕΙΣ ΧΡΟΝΟΥ ======= */
 function drawTimeLabels(plotWidth) {
   fill(0);
   noStroke();
-  textSize(12);
   for (let tt = 0; tt <= totalTime + 1e-9; tt += T0/4) {
     const x = map(tt, 0, totalTime, marginLeft, plotWidth);
     const k = tt / (T0/4);
@@ -208,23 +198,23 @@ function drawTimeLabels(plotWidth) {
   }
 }
 
-/* ======= ΧΡΟΝΙΚΟΣ ΔΕΙΚΤΗΣ ======= */
+/* ======= ΔΕΙΚΤΗΣ ΧΡΟΝΟΥ ======= */
 function drawTimeCursor(plotWidth) {
   stroke("red");
   const x = map(t, 0, totalTime, marginLeft, plotWidth);
   line(x, 0, x, height);
 }
 
-/* ======= ΚΥΚΛΟΣ ΦΑΣΗΣ (ΣΩΣΤΟΣ) ======= */
+/* ======= ΚΥΚΛΟΣ ΦΑΣΗΣ ======= */
 function drawPhaseCircle(plotWidth, phi0) {
-  const cx = plotWidth + (width - plotWidth) / 2;
-  const cy = height / 2;
+  const cx = plotWidth + (width - plotWidth)/2;
+  const cy = height/2;
   const R  = Math.min(width - plotWidth, height) * 0.28;
 
-  const phiTotal = phi0 + Math.min(thetaRel, totalThetaRel); // ✅ φ0 + εξέλιξη
+  const phiTotal = phi0 + Math.min(thetaRel, totalThetaRel);
 
   push();
-  translate(cx, cy);
+  translate(cx,cy);
 
   stroke(0);
   noFill();
@@ -237,13 +227,6 @@ function drawPhaseCircle(plotWidth, phi0) {
   fill("red");
   circle(R*Math.cos(phiTotal),-R*Math.sin(phiTotal),R*0.08);
 
-  if (showValues && frozenPQ) {
-    noStroke();
-    fill("red");
-    textSize(14);
-    text(`φ = ${frozenPQ.p}π/${frozenPQ.q}`, -R, -R - 20);
-    text(`t = ${frozenPQ.p}T/${2*frozenPQ.q}`, -R, -R);
-  }
   pop();
 }
 
@@ -251,30 +234,4 @@ function drawPhaseCircle(plotWidth, phi0) {
 function togglePause() {
   paused = !paused;
   pauseBtn.html(paused ? "Resume" : "Pause");
-
-  if (paused) {
-    // παγώνουμε τη ΣΥΝΟΛΙΚΗ φάση
-    const phiFrozen = Number(phiSelect.value()) + thetaRel;
-    frozenPQ = phaseToFraction(phiFrozen);
-    showValues = true;
-  } else {
-    showValues = false;
-  }
 }
-
-/* ======= ΒΟΗΘΗΤΙΚΟ ======= */
-function phaseToFraction(th) {
-  const x = th / Math.PI;
-  let best = {p:0, q:1, err:1e9};
-
-  for (let q = 1; q <= 24; q++) {
-    const p = Math.round(x * q);
-    const err = Math.abs(x - p/q);
-    if (err < best.err) best = {p, q, err};
-  }
-
-  const g = gcd(Math.abs(best.p), best.q);
-  return {p: best.p/g, q: best.q/g};
-}
-
-function gcd(a,b){ return b ? gcd(b,a%b) : a; }
