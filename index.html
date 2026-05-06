@@ -4,38 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Απλή Αρμονική Ταλάντωση – Διαγράμματα & Φάση</title>
+  <title>Απλή Αρμονική Ταλάντωση</title>
 
-  <!-- p5.js core -->
+  <!-- p5 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
-
-  <!-- p5.dom (για select, buttons κλπ) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/addons/p5.dom.min.js"></script>
 
-  <style>
-    /* Βασικό responsive reset */
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: #ffffff;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    /* Το canvas να πιάνει όλη την οθόνη */
-    canvas {
-      display: block;
-    }
-
-    /* Τα controls να μην "κολλάνε" */
-    select, button {
-      font-size: 14px;
-      margin: 4px 0;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <!-- Το sketch θα φορτωθεί εδώ -->
+  <div id="app">
+    <aside id="controls"></aside>
+    <main id="canvas-holder"></main>
+  </div>
+
   <script src="sketch.js"></script>
 </body>
 </html>
