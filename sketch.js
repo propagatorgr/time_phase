@@ -25,13 +25,18 @@ let showPauseValues = false;
 
 // ===================================================
 function setup() {
-  createCanvas(windowWidth * 0.95, windowHeight * 0.95);
+  
+const c = createCanvas(
+    document.getElementById("canvas-holder").clientWidth,
+    document.getElementById("canvas-holder").clientHeight
+  );
+  c.parent("canvas-holder");
 
-  createP("Πλάτος A");
-  ASelect = createSelect();
-  [50, 100, 150].forEach(v => ASelect.option(v));
+  // ΠΟΛΥ ΣΗΜΑΝΤΙΚΟ: όλα τα controls εδώ
+  createP("Πλάτος A").parent("controls");
+  ASelect = createSelect().parent("controls");
 
-  createP("Αριθμός περιόδων");
+   createP("Αριθμός περιόδων");
   periodsSelect = createSelect();
   [1, 2, 3, 4].forEach(v => periodsSelect.option(v));
 
