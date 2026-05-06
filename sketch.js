@@ -224,47 +224,43 @@ function drawPhaseCircle() {
   if (samples.length === 0) return;
 
   // Χρησιμοποιούμε ΜΟΝΟ τον χρόνο (Δt)
-  const state = paused && frozen ? frozen : samples[samples.length - 1];
+  const state = (paused && frozen) ? frozen : samples[samples.length - 1];
   const deltaT = state.t;
 
-  // Γωνία κύκλου = 2π · (Δt / T)
+  // Γωνία κύκλου = 2π·(Δt/T)
   const theta = TWO_PI * (deltaT / T);
 
   const cx = width - RIGHT_PANEL / 2;
   const cy = height / 2;
   const R  = 100;
 
-  // Κύκλος
+  // ---- ΚΥΚΛΟΣ ----
   stroke(0);
-  noFill();
-  circle(cx, cy, 2 * R);
+  fill(255);            // ⚠️ reset fill για να μη χαλάσει το text
+  ellipse(cx, cy, 2 * R, 2 * R);
+
   line(cx - R, cy, cx + R, cy);
   line(cx, cy - R, cx, cy + R);
 
-  // Δείκτης σύμφωνα με τον ΧΡΟΝΟ
+  // ---- ΔΕΙΚΤΗΣ ΧΡΟΝΟΥ ----
   stroke("red");
-  line(
-    cx,
-    cy,
-    cx + R * cos(theta),
-    cy - R * sin(theta)
-  );
+  line(cx, cy, cx + R * cos(theta), cy - R * sin(theta));
 
   fill("red");
-  circle(
-    cx + R * cos(theta),
-    cy - R * sin(theta),
-    8
-  );
+  noStroke();
+  circle(cx + R * cos(theta), cy - R * sin(theta), 8);
 
-  // Ενδείξεις στο Pause
+  // ---- LABELS ΣΤΟ PAUSE ----
   if (paused) {
-    const fracT = timeToFraction(deltaT);
+    const frac = timeToFraction(deltaT);
 
+    fill("red");        // ✅ ΑΥΤΟ ΕΛΕΙΠΕ
     noStroke();
-    fill("red");
-    text(`Δt = ${fracT.p}T/${fracT.q}`, cx - R, cy - R - 20);
-    text(`Δφ = ${2 * fracT.p}π/${fracT.q}`, cx - R, cy - R);
+    textAlign(LEFT, TOP);
+    textSize(12);
+
+    text(`Δt = ${frac.p}T/${frac.q}`, cx - R, cy - R - 22);
+    text(`Δφ = ${2 * frac.p}π/${frac.q}`, cx - R, cy - R - 6);
   }
 }
 
