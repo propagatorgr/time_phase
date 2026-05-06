@@ -74,7 +74,7 @@ function resetSketch() {
   t = 0;
   paused = false;
   frozen = null;
-
+  pauseBtn.html("Pause");
   T = Number(TSelect.value());
   tMax = Number(periodsSelect.value()) * T;
 }
@@ -82,6 +82,10 @@ function resetSketch() {
 // ==================================================
 function togglePause() {
   paused = !paused;
+
+  // Αλλαγή κειμένου κουμπιού
+  pauseBtn.html(paused ? "Resume" : "Pause");
+
   if (paused && samples.length > 0) {
     frozen = samples[samples.length - 1];
   }
