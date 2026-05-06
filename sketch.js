@@ -198,7 +198,7 @@ function drawSignals(A) {
       drawingContext.setLineDash([]);
       noStroke();
       fill(0);
-      text(`${k}₀ = ${v0.toFixed(2)}`, -LEFT + 5, y0 + 4);
+     text(`${k}₀ = ${v0.toFixed(2)}`, -40, y0 + 4);
     }
 
     stroke(colors[k]);
