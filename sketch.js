@@ -109,6 +109,7 @@ function draw() {
   drawTimeCursor();
   drawSignals(A);
   drawPhaseCircle();
+  drawTimeLabels();
 }
 
 // ==================================================
@@ -124,7 +125,35 @@ function drawTimeGrid() {
   }
   drawingContext.setLineDash([]);
 }
+function drawTimeLabels() {
+  const right = width - RIGHT_PANEL;
+  const y = height - BOTTOM + 20;   // λίγο κάτω από τα διαγράμματα
 
+  noStroke();
+  fill(0);
+  textSize(12);
+  textAlign(CENTER, TOP);
+
+  for (let tt = 0; tt <= tMax + 1e-9; tt += T/4) {
+    const x = map(tt, 0, tMax, LEFT, right);
+
+    const k = Math.round(tt / (T/4));
+
+    let label;
+    if (k === 0) {
+      label = "0";
+    } else if (k === 4) {
+      label = "T";
+    } else if (k % 4 === 0) {
+      label = `${k/4}T`;
+    } else {
+      label = `${k}T/4`;
+    }
+
+    text(label, x, y);
+  }
+}
+``
 // ==================================================
 // Κόκκινη γραμμή χρόνου
 function drawTimeCursor() {
