@@ -1,5 +1,10 @@
-const DT = 0.01;
 const TWO_PI = 2 * Math.PI;
+const DT = 0.01;
+
+// layout
+const LEFT = 110;
+const RIGHT_MARGIN = 220;
+const TOP = 40;
 
 let ASelect, periodsSelect, phiSelect, TSelect;
 let pauseBtn, resetBtn;
@@ -7,13 +12,10 @@ let pauseBtn, resetBtn;
 let samples = [];
 let t = 0;
 let paused = false;
+let frozen = null;
 
 let T = 2;
 let tMax = 2;
-
-// για πραγματικό Pause
-let frozenT = 0;
-let frozenPhi = 0;
 
 function setup() {
   const holder = document.getElementById("canvas-holder");
@@ -26,133 +28,149 @@ function setup() {
 
   createP("Αριθμός περιόδων").parent("controls");
   periodsSelect = createSelect().parent("controls");
-  [1, 2, 3, 4].forEach(v => periodsSelect.option(v));
+  [1,2,3,4].forEach(v => periodsSelect.option(v));
 
   createP("Αρχική φάση φ").parent("controls");
   phiSelect = createSelect().parent("controls");
   [
-    ["0", 0],
-    ["π/6", Math.PI / 6],
-    ["π/4", Math.PI / 4],
-    ["π/3", Math.PI / 3],
-    ["π/2", Math.PI / 2],
-    ["2π/3", 2 * Math.PI / 3],
-    ["π", Math.PI],
-    ["3π/2", 3 * Math.PI / 2],
-    ["2π", 2 * Math.PI]
+    ["0",0],
+    ["π/6",Math.PI/6],
+    ["π/4",Math.PI/4],
+    ["π/3",Math.PI/3],
+    ["π/2",Math.PI/2],
+    ["2π/3",2*Math.PI/3],
+    ["3π/4",3*Math.PI/4],
+    ["5π/6",5*Math.PI/6],
+    ["π",Math.PI],
+    ["7π/6",7*Math.PI/6],
+    ["4π/3",4*Math.PI/3],
+    ["3π/2",3*Math.PI/2],
+    ["5π/3",5*Math.PI/3],
+    ["11π/6",11*Math.PI/6],
+    ["2π",2*Math.PI]
   ].forEach(p => phiSelect.option(p[0], p[1]));
 
   createP("Περίοδος T").parent("controls");
   TSelect = createSelect().parent("controls");
-  [["T = 1 s", 1], ["T = 2 s", 2], ["T = 4 s", 4]]
+  [["T = 1 s",1],["T = 2 s",2],["T = 4 s",4]]
     .forEach(p => TSelect.option(p[0], p[1]));
 
-  pauseBtn = createButton("Pause").parent("controls");
-  pauseBtn.mousePressed(togglePause);
-
-  resetBtn = createButton("Reset").parent("controls");
-  resetBtn.mousePressed(resetSketch);
+  pauseBtn = createButton("Pause").parent("controls").mousePressed(togglePause);
+  resetBtn = createButton("Reset").parent("controls").mousePressed(resetSketch);
 
   resetSketch();
 }
 
-function windowResized() {
+function windowResized(){
   const holder = document.getElementById("canvas-holder");
   resizeCanvas(holder.clientWidth, holder.clientHeight);
 }
 
-function resetSketch() {
+function resetSketch(){
   samples = [];
   t = 0;
   paused = false;
-  frozenT = 0;
-  frozenPhi = 0;
+  frozen = null;
 
   T = Number(TSelect.value());
   tMax = Number(periodsSelect.value()) * T;
 }
 
-function togglePause() {
+function togglePause(){
   paused = !paused;
-
-  if (paused && samples.length > 0) {
-    frozenT = samples[samples.length - 1].t;
-    frozenPhi = samples[samples.length - 1].phi;
-  }
+  if(paused && samples.length>0) frozen = samples.at(-1);
 }
 
-function draw() {
+function draw(){
   background(255);
 
   const A = Number(ASelect.value());
   const phi0 = Number(phiSelect.value());
   const omega = TWO_PI / T;
 
-  if (!paused && t <= tMax + 1e-9) {
-    const phiRaw = phi0 + omega * t;
-    const phi = ((phiRaw % TWO_PI) + TWO_PI) % TWO_PI;
-
+  if(!paused && t <= tMax + 1e-9){
+    const phi = (phi0 + omega*t) % TWO_PI;
     samples.push({
-      t,
-      x: A * sin(phi),
-      u: omega * A * cos(phi),
-      a: -omega * omega * A * sin(phi),
-      phi
+      t, phi,
+      x: A*sin(phi),
+      u: omega*A*cos(phi),
+      a: -omega*omega*A*sin(phi)
     });
-
     t += DT;
   }
 
-  drawPlots();
+  drawGrids();
+  drawSignals();
   drawPhaseCircle();
 }
 
-function drawPlots() {
-  const h = height / 3;
-  const left = 60;
-  const right = width - 220;
+function drawSignals(){
+  const h = height/3;
+  const right = width - RIGHT_MARGIN;
 
-  for (let i = 1; i < samples.length; i++) {
-    const s0 = samples[i - 1];
-    const s1 = samples[i];
+  ["x","u","a"].forEach((k,i)=>{
+    const scale = k==="x"?50:(k==="u"?300:800);
+    push();
+    translate(LEFT, TOP + i*h + h/2);
 
-    const x0 = map(s0.t, 0, tMax, left, right);
-    const x1 = map(s1.t, 0, tMax, left, right);
+    stroke(180); line(0,0,right-LEFT,0);
 
-    stroke("blue");
-    line(x0, h / 2 - s0.x, x1, h / 2 - s1.x);
+    if(samples.length>0){
+      const v0 = samples[0][k];
+      const y0 = map(v0,-scale,scale,h/2,-h/2);
+      drawingContext.setLineDash([6,6]);
+      line(0,y0,right-LEFT,y0);
+      drawingContext.setLineDash([]);
+      noStroke(); fill(0);
+      text(`${k}₀ = ${v0.toFixed(1)}`, -LEFT+10, y0+4);
+    }
 
-    stroke("green");
-    line(x0, h + h / 2 - s0.u / 10, x1, h + h / 2 - s1.u / 10);
-
-    stroke("red");
-    line(x0, 2 * h + h / 2 - s0.a / 50, x1, 2 * h + h / 2 - s1.a / 50);
-  }
+    noFill();
+    stroke(k==="x"?"blue":k==="u"?"green":"red");
+    beginShape();
+    samples.forEach(s=>{
+      const x = map(s.t,0,tMax,0,right-LEFT);
+      const y = map(s[k],-scale,scale,h/2,-h/2);
+      vertex(x,y);
+    });
+    endShape();
+    pop();
+  });
 }
 
-function drawPhaseCircle() {
+function drawGrids(){
+  const right = width - RIGHT_MARGIN;
+  drawingContext.setLineDash([6,6]);
+  for(let tt=0;tt<=tMax+1e-9;tt+=T/4){
+    const x = map(tt,0,tMax,LEFT,right);
+    line(x,TOP,x,height);
+    noStroke();
+    fill(0);
+    text(tt.toFixed(2)+'s',x-12,height-8);
+  }
+  drawingContext.setLineDash([]);
+}
+
+function drawPhaseCircle(){
   const R = 120;
-  const cx = width - 120;
-  const cy = height / 2;
+  const cx = width - RIGHT_MARGIN/2;
+  const cy = height/2;
+  const state = paused&&frozen?frozen:samples.at(-1);
+  if(!state) return;
 
-  stroke(0);
-  noFill();
-  circle(cx, cy, 2 * R);
-  line(cx - R, cy, cx + R, cy);
-  line(cx, cy - R, cx, cy + R);
+  noFill(); stroke(0);
+  circle(cx,cy,2*R);
+  line(cx-R,cy,cx+R,cy);
+  line(cx,cy-R,cx,cy+R);
 
-  if (samples.length > 0) {
-    const phi = paused ? frozenPhi : samples[samples.length - 1].phi;
-    stroke("red");
-    line(cx, cy, cx + R * cos(phi), cy - R * sin(phi));
-    fill("red");
-    circle(cx + R * cos(phi), cy - R * sin(phi), 8);
+  stroke("red");
+  line(cx,cy,cx+R*cos(state.phi),cy-R*sin(state.phi));
+  fill("red");
+  circle(cx+R*cos(state.phi),cy-R*sin(state.phi),8);
 
-    if (paused) {
-      noStroke();
-      fill("red");
-      text(`φ = ${(phi / Math.PI).toFixed(2)}π`, cx - R, cy - R - 16);
-      text(`t = ${frozenT.toFixed(2)} s`, cx - R, cy - R);
-    }
+  if(paused){
+    noStroke(); fill("red");
+    text(`φ=${(state.phi/Math.PI).toFixed(2)}π`,cx-R,cy-R-20);
+    text(`t=${state.t.toFixed(2)} s`,cx-R,cy-R);
   }
 }
