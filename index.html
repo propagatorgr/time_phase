@@ -1,22 +1,52 @@
 <!DOCTYPE html>
 <html lang="el">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8">
+  <title>ΑΑΤ – Διαγράμματα & Φάση</title>
 
-  <title>Απλή Αρμονική Ταλάντωση</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.dom.min.js"></script>
 
-  <!-- p5 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/addons/p5.dom.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
 
-  <link rel="stylesheet" href="style.css">
+    #app {
+      display: flex;
+      height: 100vh;
+    }
+
+    #controls {
+      width: 260px;
+      padding: 12px;
+      box-sizing: border-box;
+      border-right: 1px solid #ccc;
+      background: #f7f7f7;
+      overflow-y: auto;
+    }
+
+    #canvas-holder {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    select, button {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 4px;
+      font-size: 14px;
+    }
+  </style>
 </head>
 
 <body>
   <div id="app">
-    <aside id="controls"></aside>
-    <main id="canvas-holder"></main>
+    <div id="controls"></div>
+    <div id="canvas-holder"></div>
   </div>
 
   <script src="sketch.js"></script>
