@@ -26,7 +26,10 @@ let tMax = 2;
 // ================= SETUP =================
 function setup() {
   const holder = document.getElementById("canvas-holder");
-  const c = createCanvas(holder.clientWidth, holder.clientHeight);
+ 
+const desiredHeight = Math.max(holder.clientHeight, 750);
+const c = createCanvas(holder.clientWidth, desiredHeight);
+
   c.parent("canvas-holder");
 
   createP("Πλάτος A").parent("controls");
@@ -61,7 +64,10 @@ function setup() {
 // ================= RESIZE =================
 function windowResized() {
   const holder = document.getElementById("canvas-holder");
-  resizeCanvas(holder.clientWidth, holder.clientHeight);
+  
+const desiredHeight = Math.max(holder.clientHeight, 750);
+resizeCanvas(holder.clientWidth, desiredHeight);
+
 }
 
 // ================= RESET =================
