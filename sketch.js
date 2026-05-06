@@ -1,5 +1,5 @@
 // ================== ΦΥΣΙΚΕΣ ΣΤΑΘΕΡΕΣ ==================
-const T0 = 2;                 // φυσική περίοδος
+const T0 = 2;
 const dt = 0.01;
 const omega = TWO_PI / T0;
 
@@ -8,16 +8,13 @@ let ASelect, periodsSelect, phiSelect;
 let pauseBtn, resetBtn;
 
 let samples = [];
-let theta = 0;                // ✅ ΦΑΣΗ (κύρια μεταβλητή)
+let theta = 0;
 let t = 0;
 let paused = false;
 let totalTime = T0;
 let totalTheta = TWO_PI;
 
-let phaseFrozen = false;
-let frozenPQ = null;
-
-let marginLeft;
+let marginLeft = 0;   // ✅ ΚΡΙΣΙΜΗ ΔΙΟΡΘΩΣΗ
 
 // ================== SETUP ==================
 function setup() {
@@ -59,12 +56,9 @@ function windowResized() {
 // ================== RESET ==================
 function resetSketch() {
   samples = [];
-  t = 0;
   theta = Number(phiSelect.value());
+  t = 0;
   paused = false;
-  phaseFrozen = false;
-  frozenPQ = null;
-
   pauseBtn.html("Pause");
 
   let N = Number(periodsSelect.value());
@@ -79,7 +73,7 @@ function draw() {
   let A = Number(ASelect.value());
   let plotWidth = width * 0.65;
 
-  // ✅ ΕΞΕΛΙΞΗ ΜΕ ΑΚΡΙΒΗ ΓΩΝΙΑ
+  // ✅ ακριβής εξέλιξη φάσης
   if (!paused && theta <= totalTheta) {
     samples.push({
       t,
@@ -87,115 +81,76 @@ function draw() {
       u: omega * A * cos(theta),
       a: -omega*omega*A * sin(theta)
     });
-
     theta += omega * dt;
     t = theta / omega;
   }
 
   drawVerticalGrid(plotWidth);
   drawTimeLabels(plotWidth);
-
   drawPlots(A, plotWidth);
   drawCursor(plotWidth);
   drawPhaseCircle(plotWidth);
 }
 
-// ================== ΔΙΑΓΡΑΜΜΑΤΑ ==================
+// ================== ΥΠΟΡΟΥΤΙΝΕΣ ==================
 function drawPlots(A, plotWidth) {
   plotSignal("x(t)", p=>p.x, A, 0, plotWidth, "blue");
   plotSignal("u(t)", p=>p.u, omega*A, height/3, plotWidth, "green");
   plotSignal("a(t)", p=>p.a, omega*omega*A, 2*height/3, plotWidth, "red");
 }
 
-function plotSignal(label, accessor, scale, yOffset, plotWidth, col) {
+function plotSignal(label, f, scale, yOffset, plotWidth, col) {
   let h = height/3;
   push();
   translate(0, yOffset + h/2);
-
-  stroke(180);
   line(marginLeft, 0, plotWidth, 0);
-
-  stroke(col);
-  noFill();
-  beginShape();
-  samples.forEach(s => {
-    let x = map(s.t, 0, totalTime, marginLeft, plotWidth);
-    let y = map(accessor(s), -scale, scale, h/2, -h/2);
-    vertex(x, y);
+  stroke(col); noFill(); beginShape();
+  samples.forEach(s=>{
+    let x=map(s.t,0,totalTime,marginLeft,plotWidth);
+    vertex(x,map(f(s),-scale,scale,h/2,-h/2));
   });
-  endShape();
-
-  noStroke();
-  fill(0);
-  text(label, marginLeft + 5, -h/2 + 15);
-  pop();
+  endShape(); pop();
 }
 
-// ================== ΠΛΕΓΜΑ & ΧΡΟΝΟΣ ==================
-function drawVerticalGrid(plotWidth) {
-  stroke(180);
-  drawingContext.setLineDash([6,6]);
-  for (let tt = 0; tt <= totalTime + 1e-6; tt += T0/4) {
-    let x = map(tt, 0, totalTime, marginLeft, plotWidth);
-    line(x, 0, x, height);
+function drawVerticalGrid(plotWidth){
+  stroke(180); drawingContext.setLineDash([6,6]);
+  for(let tt=0;tt<=totalTime+1e-6;tt+=T0/4){
+    let x=map(tt,0,totalTime,marginLeft,plotWidth);
+    line(x,0,x,height);
   }
   drawingContext.setLineDash([]);
 }
 
-function drawTimeLabels(plotWidth) {
-  fill(0);
-  noStroke();
-  textSize(12);
-
-  let yLabel = height - 8;
-
-  for (let tt = 0; tt <= totalTime + 1e-6; tt += T0/4) {
-    let x = map(tt, 0, totalTime, marginLeft, plotWidth);
-    let k = tt / (T0/4);
-
-    let label;
-    if (k === 0) label = "0";
-    else if (k % 4 === 0) label = (k/4) + "T";
-    else label = k + "T/4";
-
-    text(label, x - 10, yLabel);
+function drawTimeLabels(plotWidth){
+  fill(0); noStroke(); textSize(12);
+  for(let tt=0;tt<=totalTime+1e-6;tt+=T0/4){
+    let x=map(tt,0,totalTime,marginLeft,plotWidth);
+    let k=tt/(T0/4);
+    let label=k===0?"0":(k%4===0?(k/4)+"T":k+"T/4");
+    text(label,x-10,height-8);
   }
 }
 
-// ================== CURSOR ==================
-function drawCursor(plotWidth) {
+function drawCursor(plotWidth){
   stroke("red");
-  let x = map(t, 0, totalTime, marginLeft, plotWidth);
-  line(x, 0, x, height);
+  let x=map(t,0,totalTime,marginLeft,plotWidth);
+  line(x,0,x,height);
 }
 
-// ================== ΚΥΚΛΟΣ ΦΑΣΗΣ ==================
-function drawPhaseCircle(plotWidth) {
-  let cx = plotWidth + (width-plotWidth)/2;
-  let cy = height/2;
-  let R = min(width-plotWidth, height)*0.28;
+function drawPhaseCircle(plotWidth){
+  let cx=plotWidth+(width-plotWidth)/2;
+  let cy=height/2;
+  let R=min(width-plotWidth,height)*0.28;
+  let θ=min(theta,totalTheta);
 
-  let thetaEff = min(theta, totalTheta);
-
-  push();
-  translate(cx,cy);
-  noFill();
-  stroke(0);
-  circle(0,0,2*R);
-  line(-R,0,R,0);
-  line(0,-R,0,R);
-
-  stroke("red");
-  line(0,0,R*cos(thetaEff),-R*sin(thetaEff));
-  fill("red");
-  circle(R*cos(thetaEff),-R*sin(thetaEff),R*0.08);
-
+  push(); translate(cx,cy);
+  circle(0,0,2*R); line(-R,0,R,0); line(0,-R,0,R);
+  stroke("red"); line(0,0,R*cos(θ),-R*sin(θ));
+  fill("red"); circle(R*cos(θ),-R*sin(θ),R*0.08);
   pop();
 }
 
-// ================== PAUSE ==================
-function togglePause() {
-  paused = !paused;
-  phaseFrozen = false;
-  pauseBtn.html(paused ? "Resume" : "Pause");
+function togglePause(){
+  paused=!paused;
+  pauseBtn.html(paused?"Resume":"Pause");
 }
