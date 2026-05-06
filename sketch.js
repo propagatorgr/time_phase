@@ -1,22 +1,22 @@
 /****************************************************
- * Απλή Αρμονική Ταλάντωση – Τελική Σταθερή Έκδοση
+ * Απλή Αρμονική Ταλάντωση – Καθαρή Τελική Έκδοση
  ****************************************************/
 
 const TWO_PI = 2 * Math.PI;
 const DT = 0.01;
 
-// --------- LAYOUT -----------
+// ---------- LAYOUT ----------
 const LEFT = 80;
 const TOP = 40;
 const BOTTOM = 40;
 const RIGHT_PANEL = 260;
 const MIN_CANVAS_HEIGHT = 760;
 
-// --------- CONTROLS ---------
+// ---------- CONTROLS ----------
 let ASelect, periodsSelect, phiSelect, TSelect;
 let pauseBtn, resetBtn;
 
-// --------- STATE ------------
+// ---------- STATE ----------
 let samples = [];
 let t = 0;
 let paused = false;
@@ -25,7 +25,7 @@ let frozen = null;
 let T = 2;
 let tMax = 2;
 
-// ==================================================
+// ================= SETUP =================
 function setup() {
   const holder = document.getElementById("canvas-holder");
   const h = Math.max(holder.clientHeight, MIN_CANVAS_HEIGHT);
@@ -61,37 +61,39 @@ function setup() {
   resetSketch();
 }
 
-// ==================================================
+// ================= RESIZE =================
 function windowResized() {
   const holder = document.getElementById("canvas-holder");
   const h = Math.max(holder.clientHeight, MIN_CANVAS_HEIGHT);
   resizeCanvas(holder.clientWidth, h);
 }
 
-// ==================================================
+// ================= RESET =================
 function resetSketch() {
   samples = [];
   t = 0;
   paused = false;
   frozen = null;
+
   pauseBtn.html("Pause");
+
   T = Number(TSelect.value());
   tMax = Number(periodsSelect.value()) * T;
 }
 
-// ==================================================
+// ================= PAUSE / RESUME =================
 function togglePause() {
   paused = !paused;
-
-  // Αλλαγή κειμένου κουμπιού
   pauseBtn.html(paused ? "Resume" : "Pause");
 
   if (paused && samples.length > 0) {
     frozen = samples[samples.length - 1];
+  } else {
+    frozen = null;
   }
 }
 
-// ==================================================
+// ================= DRAW =================
 function draw() {
   background(255);
 
@@ -116,8 +118,7 @@ function draw() {
   drawTimeLabels();
 }
 
-// ==================================================
-// Κατακόρυφες γραμμές Τ/4
+// ================= TIME GRID =================
 function drawTimeGrid() {
   const right = width - RIGHT_PANEL;
   stroke(180);
@@ -129,37 +130,32 @@ function drawTimeGrid() {
   }
   drawingContext.setLineDash([]);
 }
+
+// ================= TIME LABELS =================
 function drawTimeLabels() {
   const right = width - RIGHT_PANEL;
-  const y = height - BOTTOM + 20;   // λίγο κάτω από τα διαγράμματα
+  const y = height - BOTTOM + 20;
 
-  noStroke();
   fill(0);
+  noStroke();
   textSize(12);
   textAlign(CENTER, TOP);
 
   for (let tt = 0; tt <= tMax + 1e-9; tt += T/4) {
     const x = map(tt, 0, tMax, LEFT, right);
-
     const k = Math.round(tt / (T/4));
 
     let label;
-    if (k === 0) {
-      label = "0";
-    } else if (k === 4) {
-      label = "T";
-    } else if (k % 4 === 0) {
-      label = `${k/4}T`;
-    } else {
-      label = `${k}T/4`;
-    }
+    if (k === 0) label = "0";
+    else if (k === 4) label = "T";
+    else if (k % 4 === 0) label = `${k/4}T`;
+    else label = `${k}T/4`;
 
     text(label, x, y);
   }
 }
-``
-// ==================================================
-// Κόκκινη γραμμή χρόνου
+
+// ================= TIME CURSOR =================
 function drawTimeCursor() {
   const right = width - RIGHT_PANEL;
   const tt = paused && frozen ? frozen.t : t;
@@ -171,8 +167,7 @@ function drawTimeCursor() {
   strokeWeight(1);
 }
 
-// ==================================================
-// Διαγράμματα x, u, a
+// ================= SIGNALS =================
 function drawSignals(A) {
   const usableHeight = height - TOP - BOTTOM;
   const h = usableHeight / 3;
@@ -181,7 +176,7 @@ function drawSignals(A) {
   const scales = {
     x: A,
     u: (TWO_PI / T) * A,
-    a: (TWO_PI / T) * (TWO_PI / T) * A
+    a: (TWO_PI / T) ** 2 * A
   };
 
   const colors = { x:"blue", u:"green", a:"red" };
@@ -200,9 +195,9 @@ function drawSignals(A) {
       drawingContext.setLineDash([6,6]);
       line(0, y0, right - LEFT, y0);
       drawingContext.setLineDash([]);
-      noStroke();
       fill(0);
-     text(`${k}₀ = ${v0.toFixed(2)}`, -40, y0 + 4);
+      noStroke();
+      text(`${k}₀ = ${v0.toFixed(2)}`, -40, y0 + 4);
     }
 
     stroke(colors[k]);
@@ -218,51 +213,42 @@ function drawSignals(A) {
   });
 }
 
-// ==================================================
-// Κύκλος φάσεων (ΑΝΕΞΑΡΤΗΤΟΣ)
+// ================= PHASE / TIME CIRCLE =================
 function drawPhaseCircle() {
   if (samples.length === 0) return;
 
-  // Χρησιμοποιούμε ΜΟΝΟ τον χρόνο (Δt)
-  const state = (paused && frozen) ? frozen : samples[samples.length - 1];
+  const state = paused && frozen ? frozen : samples[samples.length - 1];
   const deltaT = state.t;
-
-  // Γωνία κύκλου = 2π·(Δt/T)
   const theta = TWO_PI * (deltaT / T);
 
   const cx = width - RIGHT_PANEL / 2;
   const cy = height / 2;
   const R  = 100;
 
-  // ---- ΚΥΚΛΟΣ ----
   stroke(0);
-  fill(255);            // ⚠️ reset fill για να μη χαλάσει το text
-  ellipse(cx, cy, 2 * R, 2 * R);
+  fill(255);
+  ellipse(cx, cy, 2*R, 2*R);
+  line(cx-R, cy, cx+R, cy);
+  line(cx, cy-R, cx, cy+R);
 
-  line(cx - R, cy, cx + R, cy);
-  line(cx, cy - R, cx, cy + R);
-
-  // ---- ΔΕΙΚΤΗΣ ΧΡΟΝΟΥ ----
   stroke("red");
-  line(cx, cy, cx + R * cos(theta), cy - R * sin(theta));
+  line(cx, cy, cx + R*cos(theta), cy - R*sin(theta));
 
   fill("red");
   noStroke();
-  circle(cx + R * cos(theta), cy - R * sin(theta), 8);
+  circle(cx + R*cos(theta), cy - R*sin(theta), 8);
 
-  // ---- LABELS ΣΤΟ PAUSE ----
   if (paused) {
     const frac = timeToFraction(deltaT);
-
-    fill("red");        // ✅ ΑΥΤΟ ΕΛΕΙΠΕ
-    noStroke();
+    fill("red");
     textAlign(LEFT, TOP);
     textSize(12);
-
     text(`Δt = ${frac.p}T/${frac.q}`, cx - R, cy - R - 22);
-    text(`Δφ = ${2 * frac.p}π/${frac.q}`, cx - R, cy - R - 6);
+    text(`Δφ = ${2*frac.p}π/${frac.q}`, cx - R, cy - R - 6);
   }
 }
+
+// ================= HELPERS =================
 function timeToFraction(t) {
   let best = { p: 0, q: 1, err: 1e9 };
   const x = t / T;
@@ -270,24 +256,6 @@ function timeToFraction(t) {
   for (let q = 1; q <= 24; q++) {
     const p = Math.round(x * q);
     const err = Math.abs(x - p / q);
-    if (err < best.err) best = { p, q, err };
-  }
-
-  const g = gcd(Math.abs(best.p), best.q);
-  return { p: best.p / g, q: best.q / g };
-}
-
-function gcd(a, b) {
-  return b === 0 ? a : gcd(b, a % b);
-}
-// ==================================================
-function phiToFraction(phi) {
-  let best = { p:0, q:1, err:1e9 };
-  const x = phi / Math.PI;
-
-  for (let q = 1; q <= 24; q++) {
-    const p = Math.round(x*q);
-    const err = Math.abs(x - p/q);
     if (err < best.err) best = { p, q, err };
   }
 
