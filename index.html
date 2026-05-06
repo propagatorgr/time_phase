@@ -10,17 +10,22 @@
   <style>
     * { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      height: 100vh;
-    }
+   
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;   /* μπορεί να μεγαλώσει */
+  overflow-y: auto;   /* επιτρέπει scroll */
+}
 
-    #app {
-      display: flex;
-      height: 100%;
-      width: 100%;
-    }
+
+   
+#app {
+  display: flex;
+  min-height: 100%;
+  width: 100%;
+}
+
 
     #controls {
       width: 280px;
