@@ -1,20 +1,20 @@
 /****************************************************
- * Απλή Αρμονική Ταλάντωση – Τελική Διορθωμένη Έκδοση
+ * Απλή Αρμονική Ταλάντωση – ΤΕΛΙΚΗ ΣΩΣΤΗ ΕΚΔΟΣΗ
  ****************************************************/
 
 const TWO_PI = 2 * Math.PI;
 const DT = 0.01;
 
-// Layout
-const LEFT_MARGIN = 80;
-const RIGHT_PANEL = 240;
-const TOP_MARGIN = 40;
+// layout
+const LEFT = 80;
+const RIGHT_PANEL = 260;
+const TOP = 40;
 
-// Controls
+// controls
 let ASelect, periodsSelect, phiSelect, TSelect;
 let pauseBtn, resetBtn;
 
-// State
+// state
 let samples = [];
 let t = 0;
 let paused = false;
@@ -35,26 +35,16 @@ function setup() {
 
   createP("Αριθμός περιόδων").parent("controls");
   periodsSelect = createSelect().parent("controls");
-  [1, 2, 3, 4].forEach(v => periodsSelect.option(v));
+  [1,2,3,4].forEach(v => periodsSelect.option(v));
 
   createP("Αρχική φάση φ").parent("controls");
   phiSelect = createSelect().parent("controls");
   [
-    ["0", 0],
-    ["π/6", Math.PI/6],
-    ["π/4", Math.PI/4],
-    ["π/3", Math.PI/3],
-    ["π/2", Math.PI/2],
-    ["2π/3", 2*Math.PI/3],
-    ["3π/4", 3*Math.PI/4],
-    ["5π/6", 5*Math.PI/6],
-    ["π", Math.PI],
-    ["7π/6", 7*Math.PI/6],
-    ["4π/3", 4*Math.PI/3],
-    ["3π/2", 3*Math.PI/2],
-    ["5π/3", 5*Math.PI/3],
-    ["11π/6", 11*Math.PI/6],
-    ["2π", 2*Math.PI]
+    ["0",0],["π/6",Math.PI/6],["π/4",Math.PI/4],["π/3",Math.PI/3],
+    ["π/2",Math.PI/2],["2π/3",2*Math.PI/3],["3π/4",3*Math.PI/4],
+    ["5π/6",5*Math.PI/6],["π",Math.PI],["7π/6",7*Math.PI/6],
+    ["4π/3",4*Math.PI/3],["3π/2",3*Math.PI/2],
+    ["5π/3",5*Math.PI/3],["11π/6",11*Math.PI/6],["2π",2*Math.PI]
   ].forEach(p => phiSelect.option(p[0], p[1]));
 
   createP("Περίοδος T").parent("controls");
@@ -88,9 +78,7 @@ function resetSketch() {
 // ================= PAUSE =================
 function togglePause() {
   paused = !paused;
-  if (paused && samples.length > 0) {
-    frozen = samples[samples.length - 1];
-  }
+  if (paused && samples.length > 0) frozen = samples.at(-1);
 }
 
 // ================= DRAW =================
@@ -111,70 +99,76 @@ function draw() {
     t += DT;
   }
 
-  drawTimeGrid();
+  drawTimeGrid();     // ✅ Τ/4 γραμμές
+  drawTimeCursor();  // ✅ κόκκινη γραμμή χρόνου
   drawSignals(A);
   drawPhaseCircle();
 }
 
-// ================= TIME GRID =================
+// ================= TIME GRID (T/4) =================
 function drawTimeGrid() {
   const right = width - RIGHT_PANEL;
-  stroke(200);
+
+  stroke(180);
   drawingContext.setLineDash([6,6]);
 
   for (let tt = 0; tt <= tMax + 1e-9; tt += T/4) {
-    const x = map(tt, 0, tMax, LEFT_MARGIN, right);
-    line(x, TOP_MARGIN, x, height);
-    noStroke();
-    fill(0);
-    const k = Math.round(tt / (T/4));
-    if (k === 0) text("0", x-6, height-8);
-    else text(`${k}T/4`, x-12, height-8);
+    const x = map(tt, 0, tMax, LEFT, right);
+    line(x, TOP, x, height);
   }
 
   drawingContext.setLineDash([]);
+}
+
+// ================= TIME CURSOR =================
+function drawTimeCursor() {
+  const right = width - RIGHT_PANEL;
+  const currentT = paused && frozen ? frozen.t : t;
+  const x = map(currentT, 0, tMax, LEFT, right);
+
+  stroke("red");
+  strokeWeight(1.5);
+  line(x, TOP, x, height);
+  strokeWeight(1);
 }
 
 // ================= SIGNALS =================
 function drawSignals(A) {
   const h = height / 3;
   const right = width - RIGHT_PANEL;
-  const keys = ["x","u","a"];
+
   const scales = {
     x: A,
-    u: (TWO_PI / T) * A,
-    a: (TWO_PI / T)**2 * A
-  };
-  const colors = {
-    x: "blue",
-    u: "green",
-    a: "red"
+    u: (TWO_PI/T)*A,
+    a: (TWO_PI/T)*(TWO_PI/T)*A
   };
 
-  keys.forEach((k, i) => {
+  const colors = { x:"blue", u:"green", a:"red" };
+  const keys = ["x","u","a"];
+
+  keys.forEach((k,i)=>{
     push();
-    translate(LEFT_MARGIN, TOP_MARGIN + i*h + h/2);
+    translate(LEFT, TOP + i*h + h/2);
 
-    stroke(180);
-    line(0,0,right-LEFT_MARGIN,0);
+    stroke(160);
+    line(0,0,right-LEFT,0);
 
     if (samples.length > 0) {
       const v0 = samples[0][k];
-      const y0 = map(v0, -scales[k], scales[k], h/2, -h/2);
-      stroke(150);
+      const y0 = map(v0,-scales[k],scales[k],h/2,-h/2);
       drawingContext.setLineDash([6,6]);
-      line(0,y0,right-LEFT_MARGIN,y0);
+      line(0,y0,right-LEFT,y0);
       drawingContext.setLineDash([]);
       noStroke();
       fill(0);
-      text(`${k}₀ = ${v0.toFixed(2)}`, -LEFT_MARGIN+5, y0+4);
+      text(`${k}₀ = ${v0.toFixed(2)}`, -LEFT+5, y0+4);
     }
 
     stroke(colors[k]);
     noFill();
     beginShape();
-    samples.forEach(s => {
-      const x = map(s.t,0,tMax,0,right-LEFT_MARGIN);
+    samples.forEach(s=>{
+      const x = map(s.t,0,tMax,0,right-LEFT);
       const y = map(s[k],-scales[k],scales[k],h/2,-h/2);
       vertex(x,y);
     });
@@ -187,7 +181,7 @@ function drawSignals(A) {
 function drawPhaseCircle() {
   if (samples.length === 0) return;
 
-  const state = paused && frozen ? frozen : samples[samples.length-1];
+  const state = paused && frozen ? frozen : samples.at(-1);
   const cx = width - RIGHT_PANEL/2;
   const cy = height/2;
   const R = 100;
