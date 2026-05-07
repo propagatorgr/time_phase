@@ -21,7 +21,7 @@ let samples = [];
 let t = 0;
 let paused = false;
 let frozen = null;
-
+let useTimeCircle = true;   // true: Δt–Δφ, false: φ–t
 let T = 2;
 let tMax = 2;
 
@@ -54,7 +54,15 @@ function setup() {
   TSelect = createSelect().parent("controls");
   [["T = 1 s",1],["T = 2 s",2],["T = 4 s",4]]
     .forEach(p => TSelect.option(p[0], p[1]));
+  const timeCircleCheckbox = createCheckbox(
+  "Χρονική ερμηνεία κύκλου (Δt – Δφ)",
+  true
+);
+timeCircleCheckbox.parent("controls");
 
+timeCircleCheckbox.changed(() => {
+  useTimeCircle = timeCircleCheckbox.checked();
+});
   pauseBtn = createButton("Pause").parent("controls").mousePressed(togglePause);
   resetBtn = createButton("Reset").parent("controls").mousePressed(resetSketch);
 
@@ -218,8 +226,15 @@ function drawPhaseCircle() {
   if (samples.length === 0) return;
 
   const state = paused && frozen ? frozen : samples[samples.length - 1];
-  const deltaT = state.t;
-  const theta = TWO_PI * (deltaT / T);
+  let theta;
+
+if (useTimeCircle) {
+  // Χρονικός κύκλος (Δt → Δφ)
+  theta = TWO_PI * (state.t / T);
+} else {
+  // Κλασικός φ–t κύκλος
+  theta = state.phi;
+}
 
   const cx = width - RIGHT_PANEL / 2;
   const cy = height / 2;
@@ -239,13 +254,21 @@ function drawPhaseCircle() {
   circle(cx + R*cos(theta), cy - R*sin(theta), 8);
 
   if (paused) {
-    const frac = timeToFraction(deltaT);
-    fill("red");
-    textAlign(LEFT, TOP);
-    textSize(12);
-    text(`Δt = ${frac.p}T/${frac.q}`, cx - R, cy - R - 22);
-    text(`Δφ = ${2*frac.p}π/${frac.q}`, cx - R, cy - R - 6);
+  fill("red");
+  textAlign(LEFT, TOP);
+  textSize(12);
+
+  if (useTimeCircle) {
+    const fracT = timeToFraction(state.t);
+    text(`Δt = ${fracT.p}T/${fracT.q}`, cx - R, cy - R - 22);
+    text(`Δφ = ${2*fracT.p}π/${fracT.q}`, cx - R, cy - R - 6);
+  } else {
+    const fracPhi = phiToFraction(state.phi);
+    const fracT = timeToFraction(state.t);
+    text(`φ = ${fracPhi.p}π/${fracPhi.q}`, cx - R, cy - R - 22);
+    text(`t = ${fracT.p}T/${fracT.q}`, cx - R, cy - R - 6);
   }
+}
 }
 
 // ================= HELPERS =================
