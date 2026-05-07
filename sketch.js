@@ -285,7 +285,19 @@ function timeToFraction(t) {
   const g = gcd(Math.abs(best.p), best.q);
   return { p: best.p/g, q: best.q/g };
 }
+function phiToFraction(phi) {
+  let best = { p: 0, q: 1, err: 1e9 };
+  const x = phi / Math.PI;
 
+  for (let q = 1; q <= 24; q++) {
+    const p = Math.round(x * q);
+    const err = Math.abs(x - p / q);
+    if (err < best.err) best = { p, q, err };
+  }
+
+  const g = gcd(Math.abs(best.p), best.q);
+  return { p: best.p / g, q: best.q / g };
+}
 function gcd(a, b) {
   return b === 0 ? a : gcd(b, a % b);
 }
